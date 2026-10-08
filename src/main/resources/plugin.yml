@@ -1,0 +1,11 @@
+name: agonessync
+description: $description
+prefix: AGONES-PLUGIN
+version: '${version}'
+
+main: de.reptudn.agonessync.Main
+paper-plugin-loader: de.reptudn.agonessync.MainLoader
+api-version: '26.2'
+load: STARTUP
+
+authors: [ Reptudn ]
