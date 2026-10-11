@@ -1,0 +1,11 @@
+name: agonessync
+description: A plugin to update the status of the MC server for the Agones Sidecar
+prefix: AGONES-PLUGIN
+version: '1.0-SNAPSHOT'
+
+main: de.reptudn.agonessync.Main
+paper-plugin-loader: de.reptudn.agonessync.MainLoader
+api-version: '26.2'
+load: STARTUP
+
+authors: [ Reptudn ]
