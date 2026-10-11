@@ -1,36 +1,32 @@
 package de.reptudn.agonessync;
 
 import de.reptudn.agonessync.agones.Agones;
-import de.reptudn.agonessync.events.PlayerListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public final class Main extends JavaPlugin {
 
     private Agones agones;
+    private ScheduledExecutorService scheduler;
 
     @Override
     public void onEnable() {
-        agones = Agones.fromEnv();
+        agones = Agones.fromEnv(getLogger());
 
-        // health ping every 2s, async
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> agones.health(), 40L, 40L);
+        // Own thread, independent of the Bukkit tick loop, so pings start immediately
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(agones::health, 0, 2, java.util.concurrent.TimeUnit.SECONDS);
 
-        // first tick = worlds/plugins loaded
-        Bukkit.getScheduler().runTask(this, () ->
-                agones.ready().thenAccept(ok -> getLogger().info("Agones ready: " + ok)));
-
-        int maxPlayers = Bukkit.getMaxPlayers();
-        getServer().getPluginManager().registerEvents(new PlayerListener(this, maxPlayers), this);
-        agones.setCounterCapacity("players", maxPlayers);
+        // Runs on the first tick after the server finished loading
+        Bukkit.getScheduler().runTask(this, () -> agones.ready());
     }
 
     @Override
     public void onDisable() {
-        agones.shutdown().join();
+        if (scheduler != null) scheduler.shutdownNow();
     }
 
-    public Agones getAgones() {
-        return agones;
-    }
 }
