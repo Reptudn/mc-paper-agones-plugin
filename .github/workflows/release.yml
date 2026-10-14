@@ -26,22 +26,37 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       - name: Build plugin
         env:
           VERSION: ${{ github.ref_name }}
         run: |
           VERSION="${VERSION#v}"
-          ./gradlew clean jar -Pversion="${VERSION}"
-          test -s "build/libs/agonessync-${VERSION}.jar"
-          unzip -p "build/libs/agonessync-${VERSION}.jar" plugin.yml | grep -F "version: '${VERSION}'"
+          ./gradlew clean build -Pversion="${VERSION}"
+          
+          # Dynamically find the generated jar (ignoring javadoc/sources)
+          JAR_FILE=$(find build/libs -maxdepth 1 -name "*.jar" -not -name "*-javadoc.jar" -not -name "*-sources.jar" | head -n 1)
+          
+          if [ -z "$JAR_FILE" ]; then
+            echo "Error: No .jar file found in build/libs!"
+            exit 1
+          fi
+          
+          echo "Found jar: $JAR_FILE"
+          
+          # Verify plugin.yml inside the found jar
+          unzip -p "$JAR_FILE" plugin.yml | grep -F "version: '${VERSION}'"
+
+          # Export the found jar path for the release step
+          echo "JAR_PATH=$JAR_FILE" >> "$GITHUB_ENV"
 
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ github.ref_name }}
         run: |
-          VERSION="${VERSION#v}"
           gh release create "${GITHUB_REF_NAME}" \
-            "build/libs/agonessync-${VERSION}.jar" \
+            "${JAR_PATH}" \
             --generate-notes \
             --title "${GITHUB_REF_NAME}"
