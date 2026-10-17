@@ -1,6 +1,8 @@
 package de.reptudn.agonessync;
 
 import de.reptudn.agonessync.agones.Agones;
+import de.reptudn.agonessync.events.PlayerJoinLeaveEvent;
+import de.reptudn.agonessync.utils.ServerUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -16,17 +18,26 @@ public final class Main extends JavaPlugin {
     public void onEnable() {
         agones = Agones.fromEnv(getLogger());
 
-        // Own thread, independent of the Bukkit tick loop, so pings start immediately
-        scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(agones::health, 0, 2, java.util.concurrent.TimeUnit.SECONDS);
+        Bukkit.getPluginManager().registerEvents(new PlayerJoinLeaveEvent(agones), this);
 
-        // Runs on the first tick after the server finished loading
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(() -> {
+            agones.health();
+
+            if (!ServerUtils.IsServerEmpty()) {
+                agones.allocate();
+            } else {
+                agones.ready();
+            }
+
+        }, 0, 2, java.util.concurrent.TimeUnit.SECONDS);
+
         Bukkit.getScheduler().runTask(this, () -> agones.ready());
     }
 
     @Override
     public void onDisable() {
         if (scheduler != null) scheduler.shutdownNow();
+        if (agones != null) agones.shutdown();
     }
-
 }

@@ -55,10 +55,12 @@ Test locally with a dev server:
 ./gradlew runServer
 ```
 
-Without a sidecar the SDK calls simply fail and get logged. To test against a mock sidecar:
+`runServer` starts the Agones SDK sidecar in Docker automatically and stops it when
+the server exits. Docker must be running, and the sidecar image can be overridden
+when needed:
 
 ```bash
-docker run -p 9358:9358 us-docker.pkg.dev/agones-images/release/agones-sdk:<version> --local
+./gradlew runServer -PagonesSidecarImage=us-docker.pkg.dev/agones-images/release/agones-sdk:<version>
 ```
 
 (`--local` may not implement the counter endpoints; test those on a real cluster.)

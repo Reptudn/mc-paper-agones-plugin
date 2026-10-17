@@ -28,6 +28,7 @@ public class Agones {
     }
 
     public CompletableFuture<Boolean> ready()    { return post("/ready"); }
+    public CompletableFuture<Boolean> allocate()   { return post("/allocate"); }
     public CompletableFuture<Boolean> health()   { return post("/health"); }
     public CompletableFuture<Boolean> shutdown() { return post("/shutdown"); }
 
